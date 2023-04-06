@@ -1,0 +1,14 @@
+#path-input:hover {
+  filter: drop-shadow(0 0 10em #747bff);
+  transition: ease-in 250ms;
+}
+
+#pwd-input:hover {
+  filter: drop-shadow(0 0 10em #61dafb);
+  transition: ease-in 250ms;
+}
+
+#grid-icon:hover{
+  filter: drop-shadow(0 0 2em #61dafb);
+  transition: ease-in 250ms;
+}
