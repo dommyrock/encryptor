@@ -15,32 +15,22 @@ use std::{
     io::{Read, Write},
 };
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn get_path(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+// Learn more about Tauri commands at:
+//https://tauri.app/v1/guides/features/command
+//https://jonaskruckenberg.github.io/tauri-docs-wip/development/debugging.html
 
 #[tauri::command]
-fn get_password(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn encrypt_handler(path: &str, pwd: &str) -> String {
+    format!("Rust Backend:Response > > > path: {} , PWD : {}", path, pwd)
+    //TODO: here i will have ',' separator for multiple file, folder paths so i need to parse through input and validation (if file or folder)
 }
 
 //TOODO: move bellow logic to above cunctions (or combine them into single one )
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_path, get_password])
+        .invoke_handler(tauri::generate_handler![encrypt_handler])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-
-    //example multiple cli input reader 
-    // if let (Some(arg1), Some(arg2), Some(arg3)) =
-    //     (env::args().nth(1), env::args().nth(2), env::args().nth(3))
-    // {
-    //     println!("The first argument is {}", arg1);
-    //     println!("The first argument is {}", arg2);
-    //     println!("The first argument is {}", arg3);
-    // }
 
     let pth = env::args()
         .nth(1)

@@ -1,63 +1,71 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
+import { Table } from "./Table";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [pwd, setPwd] = useState("");
-  const [name, setName] = useState("");
+  const [path, setName] = useState("");
+  const [showTable, setShowTable] = useState(false);
 
-  async function get_path() {
-    setGreetMsg(await invoke("get_path", { name }));
+  async function encrypt_files() {
+    setGreetMsg(await invoke("encrypt_handler", { path: path, pwd: pwd }));
   }
-
-  async function get_pwd() {
-    setPwd(await invoke("get_password", { name }));
-  }
+  const handleTableClick = () => {
+    console.log("SADasdadasd clikecd");
+    setShowTable(!showTable);
+  };
 
   return (
     <div className="container">
-      <form
-        className="w-[100vw]"
-        onSubmit={(e) => {
-          e.preventDefault();
-          get_path();
-          get_pwd();
-        }}
-      >
-        <div className="row">
-          <input
-            id="path-input"
-            type="text"
-            className="w-[600px] h-[40px] bg-[#222] text-xl text-blue-400 px-6"
-            onChange={(e) => setName(e.currentTarget.value)}
-            placeholder="Enter File or Folder path..."
-          />
-        </div>
-        <div className="row">
-          <input
-            id="pwd-input"
-            type="password"
-            className="w-[600px] h-[40px] bg-[#222] text-xl text-blue-400 px-6"
-            onChange={(e) => setPwd(e.currentTarget.value)}
-            placeholder="Enter encryption password..."
-          />
-        </div>
+      {showTable ? (
+        <Table />
+      ) : (
+        <form
+          className="w-[100vw]"
+          onSubmit={(e) => {
+            e.preventDefault();
+            encrypt_files();
+          }}
+        >
+          <div className="row">
+            <input
+              id="path-input"
+              type="text"
+              className="w-[600px] h-[40px] bg-[#222] text-xl text-blue-400 px-6"
+              onChange={(e) => setName(e.currentTarget.value)}
+              placeholder="Enter File or Folder path..."
+            />
+          </div>
+          <div className="row">
+            <input
+              id="pwd-input"
+              type="password"
+              className="w-[600px] h-[40px] bg-[#222] text-xl text-blue-400 px-6"
+              onChange={(e) => setPwd(e.currentTarget.value)}
+              placeholder="Enter encryption password..."
+            />
+          </div>
 
-        <button type="submit">Encrypt data</button>
-      </form>
+          <button id="submit-btn" type="submit">
+            Encrypt files
+          </button>
+        </form>
+      )}
       <p>{greetMsg}</p>
 
       <div
         id="grid-icon"
-        className="flex justify-center absolute bottom-0 right-0 m-8 rounded text-black"
+        className="flex justify-center absolute bottom-0 right-0 m-8 rounded text-black cursor-pointer"
+        onClick={handleTableClick}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.5}
-          stroke="gray"
+          stroke={showTable ? "gray" : "gold"}
           className="w-10 h-10"
         >
           <path
