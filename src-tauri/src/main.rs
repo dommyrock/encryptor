@@ -3,17 +3,35 @@
 
 mod cryptography;
 
+use anyhow::{Context, Result};
 use argon2::{
     password_hash::{PasswordHash, PasswordHasher, SaltString},
     Argon2,
 };
 use cryptography::crypto::{decrypt, encrypt};
 use rand::rngs::OsRng;
+use sqlx::{migrate::MigrateDatabase, FromRow, Row, Sqlite, SqlitePool};
 use std::{
     env,
     fs::File,
     io::{Read, Write},
 };
+
+#[derive(Clone, FromRow, Debug)]
+struct User {
+    id: i64,
+    name: String,
+    active: bool,
+}
+
+#[derive(Clone, FromRow, Debug)]
+struct Encryption_Key {
+    id: i64,
+    file_path: String,
+    key: String,
+    salt: String,
+    active: bool,
+}
 
 // Learn more about Tauri commands at:
 //https://tauri.app/v1/guides/features/command
@@ -26,12 +44,70 @@ fn encrypt_handler(path: &str, pwd: &str) -> String {
 }
 
 //TOODO: move bellow logic to above cunctions (or combine them into single one )
-fn main() {
+const DB_URL: &str = "sqlite://sqlite.db";
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    //----DB INIT
+    //https://tms-dev-blog.com/rust-sqlx-basics-with-sqlite/
+    if !Sqlite::database_exists(DB_URL).await.unwrap_or(false) {
+        println!("Creating database {}", DB_URL);
+        match Sqlite::create_database(DB_URL).await {
+            Ok(_) => println!("Create db success"),
+            Err(error) => panic!("error: {}", error),
+        }
+    } else {
+        println!("Database already exists");
+    }
+    // embed your migrations in your application binary compiler won't pick up new migrations if no Rust source files have changed.
+    // You can create a Cargo build script to work around this with `sqlx migrate build-script`. > https://docs.rs/sqlx/0.5/sqlx/macro.migrate.html
+    let db = SqlitePool::connect(DB_URL).await.unwrap();
+    sqlx::migrate!().run(&db).await?;
+
+    //Check up on created tables and data
+    //--SQL fetch example
+    let result = sqlx::query(
+        "SELECT name
+                 FROM sqlite_schema
+                 WHERE type ='table' 
+                 AND name NOT LIKE 'sqlite_%';",
+    )
+    .fetch_all(&db)
+    .await
+    .unwrap()
+    .iter()
+    .enumerate()
+    .for_each(|(idx, row)| println!("[{}]: {:?}", idx, row.get::<String, &str>("name")));
+
+    let _users = sqlx::query_as::<_, User>("SELECT id, name, active FROM users")
+        .fetch_all(&db)
+        .await
+        .unwrap()
+        .iter()
+        .for_each(|x| println!("[{}] name: {}, active: {}", x.id, &x.name, x.active));
+
+    let _keys = sqlx::query_as::<_, Encryption_Key>(
+        "SELECT id, file_path, key, salt, active FROM encryption_keys",
+    )
+    .fetch_all(&db)
+    .await
+    .unwrap()
+    .iter()
+    .for_each(|x| {
+        println!(
+            "[{}] path: {}, key {}, salt {} active: {}",
+            x.id, &x.file_path, x.key, x.salt, x.active
+        )
+    });
+    //--SQL fetch example
+
+    //----TAURI COMPOSIITON
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![encrypt_handler])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 
+    //TODO: Encryption code > move outside of Composition
     let pth = env::args()
         .nth(1)
         .expect("1st parameter should be valid file PATH.");
@@ -92,6 +168,7 @@ fn main() {
     //  let mut output_buffer = Vec::new();
     output_file.write_all(&encrypted_data).unwrap();
     output_file2.write_all(&decrypted_data).unwrap();
+    Ok(())
 }
 //check equality in UTests
 //  let compare_are_equal = message.as_bytes() == &decrypted_data[..];

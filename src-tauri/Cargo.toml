@@ -1,8 +1,8 @@
 [package]
 name = "encrypt_app"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "0.1.0"
+description = "A file encryption app"
+authors = ["Dominik Polzer"]
 license = ""
 repository = ""
 edition = "2021"
@@ -19,6 +19,9 @@ serde_json = "1.0"
 rust-crypto = "^0.2"
 rand = "0.8.5"
 argon2 = "0.5.0"
+sqlx = { version = "0.6.3", features = ["runtime-tokio-native-tls", "sqlite"] }
+tokio = { version = "1.27.0", features = ["macros"] }
+anyhow = "1.0.70"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
